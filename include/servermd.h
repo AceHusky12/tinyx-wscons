@@ -314,7 +314,7 @@ SOFTWARE.
 
 #endif /* BSD / i386 */
 
-#if defined (linux) && defined (__mc68000__)
+#if defined (__mc68000__)
 
 #define IMAGE_BYTE_ORDER       MSBFirst
 #define BITMAP_BIT_ORDER       MSBFirst
