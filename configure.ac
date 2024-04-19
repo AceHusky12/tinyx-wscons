@@ -585,10 +585,12 @@ AC_DEFINE(XResExtension, 1, [Build XRes extension])
 
 dnl ---------- Compiler arguments
 
-AX_CHECK_COMPILE_FLAG([-flto],
-	[CFLAGS="$CFLAGS -flto"; LDFLAGS="$LDFLAGS -flto"; ac_cv_lto_supported=yes],
-	[ac_cv_lto_supported=no],
-	[])
+dnl AX_CHECK_COMPILE_FLAG([-flto],
+dnl 	[CFLAGS="$CFLAGS -flto"; LDFLAGS="$LDFLAGS -flto"; ac_cv_lto_supported=yes],
+dnl 	[ac_cv_lto_supported=no],
+dnl 	[])
+
+ac_cv_lto_supported = no
 
 if test x"$ac_cv_lto_supported" = xno; then
 	AC_MSG_NOTICE([LTO not supported, checking sections instead...])
