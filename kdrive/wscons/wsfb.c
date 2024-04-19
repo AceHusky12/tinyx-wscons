@@ -69,7 +69,7 @@ const KdCardFuncs wsfbFuncs = {
 	wsfbCreateResources,	/* createRes */
 	wsfbPreserve,		/* preserve */
 	NULL,		/* enable */
-	wsfbDPMS,		/* dpms */
+	/* wsfbDPMS */ NULL,	/* dpms */
 	wsfbDisable,		/* disable */
 	wsfbRestore,		/* restore */
 	wsfbScreenFini,	/* scrfini */
