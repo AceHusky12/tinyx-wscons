@@ -538,6 +538,11 @@ if test "$KDRIVE" = yes; then
         AC_DEFINE(KDRIVEVESA, 1, [Build VESA-based kdrive servers])
     fi
 
+    AC_CHECK_HEADERS([dev/wscons/wsconsio.h])
+    if test "$ac_cv_header_dev_wscons_wsconsio_h" = yes; then
+        AC_DEFINE(KDRIVEWSCONS, 1, [Build wscons-based kdrive server])
+    fi
+    
     AC_CHECK_HEADERS([linux/fb.h])
     if test "$ac_cv_header_linux_fb_h" = yes; then
         AC_DEFINE(KDRIVEFBDEV, 1, [Build fbdev-based kdrive server])
@@ -573,6 +578,7 @@ AC_SUBST(KDRIVE_LIBS)
 AM_CONDITIONAL(KDRIVELINUX, [test "x$KDRIVELINUX" = xyes])
 AM_CONDITIONAL(KDRIVEVESA, [test x"$ac_cv_header_asm_vm86_h" = xyes])
 AM_CONDITIONAL(KDRIVEFBDEV, [test x"$ac_cv_header_linux_fb_h" = xyes])
+AM_CONDITIONAL(KDRIVEWSCONS, [test x"$ac_cv_header_dev_wscons_wsconsio_h" = xyes])
 
 dnl and the rest of these are generic, so they're in config.h
 AC_DEFINE(XResExtension, 1, [Build XRes extension])
@@ -657,4 +663,5 @@ kdrive/fbdev/Makefile
 kdrive/linux/Makefile
 kdrive/src/Makefile
 kdrive/vesa/Makefile
+kdrive/wscons/Makefile
 ])

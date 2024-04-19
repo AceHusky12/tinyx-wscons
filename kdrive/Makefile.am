@@ -10,10 +10,15 @@ if KDRIVELINUX
 LINUX_SUBDIRS = linux
 endif
 
+if KDRIVEWSCONS
+WSCONS_SUBDIRS = wscons
+endif
+
 SUBDIRS =			\
 	src			\
 	$(LINUX_SUBDIRS)	\
 	$(FBDEV_SUBDIRS)	\
-	$(VESA_SUBDIRS)
+	$(VESA_SUBDIRS)		\
+	$(WSCONS_SUBDIRS)
 
-DIST_SUBDIRS = vesa fbdev src linux
+DIST_SUBDIRS = vesa fbdev src linux wscons
