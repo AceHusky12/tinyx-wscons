@@ -77,7 +77,11 @@ void ddxUseMsg(void)
 	KdUseMsg();
 	ErrorF("\nXwsfb Device Usage:\n");
 	ErrorF
-	    ("-fb path         wscons device to use. Defaults to /dev/tty\n");
+	    ("-fb path         wscons device to use. Defaults to /dev/tty.\n");
+	ErrorF
+	    ("-gray            use grayscale palette. 16/256 colors only.\n");
+	ErrorF
+	    ("-revcolors       reverse colors.\n");
 	ErrorF("\n");
 }
 
@@ -96,6 +100,12 @@ int ddxProcessArgument(int argc, char **argv, int i)
 		}
 		UseMsg();
 		exit(1);
+	} else if (!strcmp(argv[i], "-gray")) {
+		gray = TRUE;
+		return 1;
+	} else if (!strcmp(argv[i], "-revcolors")) {
+		revcolors = TRUE;
+		return 1;
 	}
 
 	return KdProcessArgument(argc, argv, i);

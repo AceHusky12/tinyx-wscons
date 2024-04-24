@@ -241,10 +241,16 @@ static Bool wsfbScreenInitialize(KdScreenInfo * screen, FbdevScrPriv * scrpriv)
 		screen->fb.visuals |= (1 << TrueColor);
 		break;
 	case 8:
-		screen->fb.visuals |= ((1 << PseudoColor) | (1 << GrayScale));
+		if (gray)
+			screen->fb.visuals |= (1 << GrayScale);
+		else
+			screen->fb.visuals |= (1 << PseudoColor);
 		break;
 	case 4:
-		screen->fb.visuals |= (1 << StaticColor);
+		if (gray)
+			screen->fb.visuals |= (1 << StaticGray);
+		else
+			screen->fb.visuals |= (1 << StaticColor);
 		break;
 	case 2:
 	case 1:
@@ -566,37 +572,47 @@ static Bool wsfbCreateColormap(ColormapPtr pmap)
 {
 	ScreenPtr pScreen = pmap->pScreen;
 	KdScreenPriv(pScreen);
-	FbdevPriv *priv = pScreenPriv->card->driver;
 	VisualPtr pVisual;
 	int i;
 	int nent;
 	xColorItem *pdefs;
 
-	struct wsdisplayio_fbinfo info;
-	memset(&info, '\0', sizeof(info));
-	(void)ioctl(priv->fd, WSDISPLAYIO_GET_FBINFO, &info);
-	switch (pmap->pVisual->class) {
-	case GrayScale:
-	case PseudoColor:
-		pVisual = pmap->pVisual;
-		nent = pVisual->ColormapEntries;
-		pdefs = malloc(nent * sizeof(xColorItem));
-		if (!pdefs)
-			return FALSE;
-		for (i = 0; i < nent; i++)
-			pdefs[i].pixel = i;
-		wsfbGetColors(pScreen, nent, pdefs);
-		for (i = 0; i < nent; i++) {
-			pmap->red[i].co.local.red = (uint16_t)pdefs[i].red;
-			pmap->red[i].co.local.green = (uint16_t)pdefs[i].green;
-			pmap->red[i].co.local.blue = (uint16_t)pdefs[i].blue;
-		}
-		free(pdefs);
-		return TRUE;
-	default:
-		return fbInitializeColormap(pmap);
+	pVisual = pmap->pVisual;
+	nent = pVisual->ColormapEntries;
+	pdefs = malloc(nent * sizeof(xColorItem));
+	if (!pdefs)
+		return FALSE;
+	for (i = 0; i < nent; i++)
+		pdefs[i].pixel = i;
+	wsfbGetColors(pScreen, nent, pdefs);
+	for (i = 0; i < nent; i++) {
+		pmap->red[i].co.local.red = (uint16_t)pdefs[i].red;
+		pmap->red[i].co.local.green = (uint16_t)pdefs[i].green;
+		pmap->red[i].co.local.blue = (uint16_t)pdefs[i].blue;
 	}
-	return 0; /* NOT REACHED */
+	if (revcolors) {
+		nent--;
+		for (i = 0; i <= nent / 2; i++) {
+			uint32_t red, green, blue;
+
+			red = pmap->red[i].co.local.red;
+			blue = pmap->red[i].co.local.blue;
+			green = pmap->red[i].co.local.green;
+
+			pmap->red[i].co.local.red =
+			    pmap->red[nent - i].co.local.red;
+			pmap->red[i].co.local.blue =
+			    pmap->red[nent - i].co.local.blue;
+			pmap->red[i].co.local.green =
+			    pmap->red[nent - i].co.local.green;
+
+			pmap->red[nent - i].co.local.red = red;
+			pmap->red[nent - i].co.local.blue = blue;
+			pmap->red[nent - i].co.local.green = green;
+		}
+	}
+	free(pdefs);
+	return TRUE;
 }
 
 Bool wsfbInitScreen(ScreenPtr pScreen)

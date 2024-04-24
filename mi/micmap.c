@@ -171,20 +171,6 @@ miInitializeColormap(ColormapPtr pmap)
 		((((((i & pVisual->blueMask) >> pVisual->offsetBlue)
 		    * 65535) / limb) >> shift) * 65535) / lim;
 	}
-#ifdef REVERSECOLORS
-	for (i = 0; i <= maxent / 2; i++) {
-		uint32_t red, green,blue;
-		red = pmap->red[i].co.local.red;
-		blue = pmap->red[i].co.local.blue;
-		green = pmap->red[i].co.local.green;
-		pmap->red[i].co.local.red = pmap->red[maxent - i].co.local.red;
-		pmap->red[i].co.local.blue = pmap->red[maxent - i].co.local.blue;
-		pmap->red[i].co.local.green = pmap->red[maxent - i].co.local.green;
-		pmap->red[maxent - i].co.local.red = red;
-		pmap->red[maxent - i].co.local.blue = blue;
-		pmap->red[maxent - i].co.local.green = green;
-	}
-#endif
     }
     else if (pVisual->class == StaticGray)
     {
@@ -196,20 +182,6 @@ miInitializeColormap(ColormapPtr pmap)
 	    pmap->red[i].co.local.green = pmap->red[i].co.local.red;
 	    pmap->red[i].co.local.blue = pmap->red[i].co.local.red;
 	}
-#ifdef REVERSECOLORS
-	for (i = 0; i <= maxent / 2; i++) {
-		uint32_t red, green,blue;
-		red = pmap->red[i].co.local.red;
-		blue = pmap->red[i].co.local.blue;
-		green = pmap->red[i].co.local.green;
-		pmap->red[i].co.local.red = pmap->red[maxent - i].co.local.red;
-		pmap->red[i].co.local.blue = pmap->red[maxent - i].co.local.blue;
-		pmap->red[i].co.local.green = pmap->red[maxent - i].co.local.green;
-		pmap->red[maxent - i].co.local.red = red;
-		pmap->red[maxent - i].co.local.blue = blue;
-		pmap->red[maxent - i].co.local.green = green;
-	}
-#endif
     }
     return TRUE;
 }
