@@ -260,9 +260,18 @@ static Bool wsfbScreenInitialize(KdScreenInfo * screen, FbdevScrPriv * scrpriv)
 		return FALSE;
 		break;
 	}
-	screen->fb.redMask= 0x0;
-	screen->fb.blueMask= 0x0;
-	screen->fb.greenMask= 0x0;
+#define Mask(o,l)   ((((1 << l) - 1) << o))
+		       
+	screen->fb.redMask =
+	    Mask(priv->info.fbi_subtype.fbi_rgbmasks.red_offset,
+		priv->info.fbi_subtype.fbi_rgbmasks.red_size);
+	screen->fb.greenMask =
+	    Mask(priv->info.fbi_subtype.fbi_rgbmasks.green_offset,
+		priv->info.fbi_subtype.fbi_rgbmasks.green_size);
+	screen->fb.blueMask =
+	    Mask(priv->info.fbi_subtype.fbi_rgbmasks.blue_offset,
+		priv->info.fbi_subtype.fbi_rgbmasks.blue_size);
+
 	/*
 	 * This is a kludge so that Render will work -- fill in the gaps
 	 * in the pixel
@@ -577,20 +586,31 @@ static Bool wsfbCreateColormap(ColormapPtr pmap)
 	int nent;
 	xColorItem *pdefs;
 
+	Bool result;
 	pVisual = pmap->pVisual;
 	nent = pVisual->ColormapEntries;
-	pdefs = malloc(nent * sizeof(xColorItem));
-	if (!pdefs)
-		return FALSE;
-	for (i = 0; i < nent; i++)
-		pdefs[i].pixel = i;
-	wsfbGetColors(pScreen, nent, pdefs);
-	for (i = 0; i < nent; i++) {
-		pmap->red[i].co.local.red = (uint16_t)pdefs[i].red;
-		pmap->red[i].co.local.green = (uint16_t)pdefs[i].green;
-		pmap->red[i].co.local.blue = (uint16_t)pdefs[i].blue;
+	switch (pVisual->class) {
+	case GrayScale:
+	case PseudoColor:
+		pdefs = malloc(nent * sizeof(xColorItem));
+		if (!pdefs)
+			return FALSE;
+		for (i = 0; i < nent; i++)
+			pdefs[i].pixel = i;
+		wsfbGetColors(pScreen, nent, pdefs);
+		for (i = 0; i < nent; i++) {
+			pmap->red[i].co.local.red = (uint16_t)pdefs[i].red;
+			pmap->red[i].co.local.green = (uint16_t)pdefs[i].green;
+			pmap->red[i].co.local.blue = (uint16_t)pdefs[i].blue;
+		}
+		free(pdefs);
+		result = TRUE;
+		break;
+	default:
+		result = fbInitializeColormap(pmap);
+		break;
 	}
-	if (revcolors) {
+	if (result && revcolors) {
 		nent--;
 		for (i = 0; i <= nent / 2; i++) {
 			uint32_t red, green, blue;
@@ -611,8 +631,7 @@ static Bool wsfbCreateColormap(ColormapPtr pmap)
 			pmap->red[nent - i].co.local.green = green;
 		}
 	}
-	free(pdefs);
-	return TRUE;
+	return result;
 }
 
 Bool wsfbInitScreen(ScreenPtr pScreen)
