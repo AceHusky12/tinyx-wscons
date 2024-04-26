@@ -75,13 +75,13 @@ void InitInput(int argc, char **argv)
 void ddxUseMsg(void)
 {
 	KdUseMsg();
-	ErrorF("\nXwsfb Device Usage:\n");
+	ErrorF("\nXwscons Device Usage:\n");
 	ErrorF
 	    ("-fb path         wscons device to use. Defaults to /dev/tty.\n");
 	ErrorF
-	    ("-gray            use grayscale palette. 16/256 colors only.\n");
+	    ("-gray            Use grayscale palette. 16/256 colors only.\n");
 	ErrorF
-	    ("-revcolors       reverse colors.\n");
+	    ("-revcolors       Reverse colors.\n");
 	ErrorF("\n");
 }
 
