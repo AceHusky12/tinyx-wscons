@@ -1016,10 +1016,10 @@ SmartScheduleStartTimer (void)
     struct itimerval	timer;
 
     SmartScheduleTimerStopped = FALSE;
-    timer.it_interval.tv_sec = 0;
-    timer.it_interval.tv_usec = SmartScheduleInterval * 1000;
-    timer.it_value.tv_sec = 0;
-    timer.it_value.tv_usec = SmartScheduleInterval * 1000;
+    timer.it_interval.tv_sec = SmartScheduleInterval / 1000;
+    timer.it_interval.tv_usec = (SmartScheduleInterval % 1000) * 1000;
+    timer.it_value.tv_sec = SmartScheduleInterval / 1000;
+    timer.it_value.tv_usec = (SmartScheduleInterval % 1000) * 1000;
     return setitimer (ITIMER_REAL, &timer, 0) >= 0;
 #endif
     return FALSE;
