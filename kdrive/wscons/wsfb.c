@@ -581,6 +581,7 @@ static Bool wsfbCreateColormap(ColormapPtr pmap)
 {
 	ScreenPtr pScreen = pmap->pScreen;
 	KdScreenPriv(pScreen);
+	KdScreenInfo *screen = pScreenPriv->screen;
 	VisualPtr pVisual;
 	int i;
 	int nent;
@@ -589,6 +590,47 @@ static Bool wsfbCreateColormap(ColormapPtr pmap)
 	Bool result;
 	pVisual = pmap->pVisual;
 	nent = pVisual->ColormapEntries;
+	if (screen->fb.depth == 1) {
+		if (revcolors) {
+			pScreen->whitePixel = 0;
+			pScreen->blackPixel = 1;
+		} else {
+			pScreen->whitePixel = 1;
+			pScreen->blackPixel = 0;
+		}
+		pmap->red[0].co.local.red = 0;
+		pmap->red[0].co.local.green = 0;
+		pmap->red[0].co.local.blue = 0;
+		pmap->red[1].co.local.red = 65535;
+		pmap->red[1].co.local.green = 65535;
+		pmap->red[1].co.local.blue = 65535;
+
+		result = TRUE;
+		goto rev;
+	} else if (screen->fb.depth == 2) {
+		if (revcolors) {
+			pScreen->whitePixel = 0;
+			pScreen->blackPixel = 3;
+		} else {
+			pScreen->whitePixel = 3;
+			pScreen->blackPixel = 0;
+		}
+		pmap->red[0].co.local.red = 0;
+		pmap->red[0].co.local.green = 0;
+		pmap->red[0].co.local.blue = 0;
+		pmap->red[1].co.local.red = 21845;
+		pmap->red[1].co.local.green = 21845;
+		pmap->red[1].co.local.blue = 21845;
+		pmap->red[2].co.local.red = 43690;
+		pmap->red[2].co.local.green = 43690;
+		pmap->red[2].co.local.blue = 43690;
+		pmap->red[3].co.local.red = 65535;
+		pmap->red[3].co.local.green = 65535;
+		pmap->red[3].co.local.blue = 65535;
+
+		result = TRUE;
+		goto rev;
+	}
 	switch (pVisual->class) {
 	case GrayScale:
 	case PseudoColor:
@@ -610,6 +652,8 @@ static Bool wsfbCreateColormap(ColormapPtr pmap)
 		result = fbInitializeColormap(pmap);
 		break;
 	}
+
+rev:
 	if (result && revcolors) {
 		nent--;
 		for (i = 0; i <= nent / 2; i++) {
