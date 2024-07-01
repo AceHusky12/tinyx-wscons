@@ -76,7 +76,7 @@ typedef struct _wsfbScrPriv {
 } FbdevScrPriv;
 
 const char *wsfbDevicePath;
-Bool gray, revcolors;
+Bool gray, revcolors, staticmap;
 
 Bool wsfbCardInit(KdCardInfo * card);
 

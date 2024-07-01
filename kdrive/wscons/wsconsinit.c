@@ -82,6 +82,7 @@ void ddxUseMsg(void)
 	    ("-gray            Use grayscale palette. 16/256 colors only.\n");
 	ErrorF
 	    ("-revcolors       Reverse colors.\n");
+	    ("-staticmap       Use static colormap.\n");
 	ErrorF("\n");
 }
 
@@ -105,6 +106,9 @@ int ddxProcessArgument(int argc, char **argv, int i)
 		return 1;
 	} else if (!strcmp(argv[i], "-revcolors")) {
 		revcolors = TRUE;
+		return 1;
+	} else if (!strcmp(argv[i], "-staticmap")) {
+		staticmap = TRUE;
 		return 1;
 	}
 

@@ -48,6 +48,8 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <sys/param.h>
+
 #ifdef HAVE_CONFIG_H
 #include <kdrive-config.h>
 #endif
@@ -56,6 +58,8 @@
 
 #include <termios.h>
 #include <errno.h>
+
+#include "apple_cmap.h"
 
 extern int KdTsPhyScreen;
 
@@ -93,6 +97,7 @@ const KdCardFuncs wsfbFuncs = {
 static Bool wsfbMapFramebuffer(KdScreenInfo * screen);
 static int wsfbUpdateFbColormap(FbdevPriv * priv, int minidx, int maxidx);
 static void wsfbDefaultColormap(KdScreenInfo * screen);
+static void wsfbDefaultColormapMono(KdScreenInfo * screen);
 
 static Bool wsfbInitialize(KdCardInfo * card, FbdevPriv * priv)
 {
@@ -241,10 +246,17 @@ static Bool wsfbScreenInitialize(KdScreenInfo * screen, FbdevScrPriv * scrpriv)
 		screen->fb.visuals |= (1 << TrueColor);
 		break;
 	case 8:
-		if (gray)
-			screen->fb.visuals |= (1 << GrayScale);
-		else
-			screen->fb.visuals |= (1 << PseudoColor);
+		if (gray) {
+			if (staticmap)
+				screen->fb.visuals |= (1 << StaticGray);
+			else
+				screen->fb.visuals |= (1 << GrayScale);
+		} else {
+			if (staticmap)
+				screen->fb.visuals |= (1 << StaticColor);
+			else
+				screen->fb.visuals |= (1 << PseudoColor);
+		}
 		break;
 	case 4:
 		if (gray)
@@ -590,55 +602,21 @@ static Bool wsfbCreateColormap(ColormapPtr pmap)
 	Bool result;
 	pVisual = pmap->pVisual;
 	nent = pVisual->ColormapEntries;
-	if (screen->fb.depth == 1) {
-		if (revcolors) {
-			pScreen->whitePixel = 0;
-			pScreen->blackPixel = 1;
-		} else {
-			pScreen->whitePixel = 1;
-			pScreen->blackPixel = 0;
-		}
-		pmap->red[0].co.local.red = 0;
-		pmap->red[0].co.local.green = 0;
-		pmap->red[0].co.local.blue = 0;
-		pmap->red[1].co.local.red = 65535;
-		pmap->red[1].co.local.green = 65535;
-		pmap->red[1].co.local.blue = 65535;
 
-		result = TRUE;
-		goto rev;
-	} else if (screen->fb.depth == 2) {
-		if (revcolors) {
-			pScreen->whitePixel = 0;
-			pScreen->blackPixel = 3;
-		} else {
-			pScreen->whitePixel = 3;
-			pScreen->blackPixel = 0;
-		}
-		pmap->red[0].co.local.red = 0;
-		pmap->red[0].co.local.green = 0;
-		pmap->red[0].co.local.blue = 0;
-		pmap->red[1].co.local.red = 21845;
-		pmap->red[1].co.local.green = 21845;
-		pmap->red[1].co.local.blue = 21845;
-		pmap->red[2].co.local.red = 43690;
-		pmap->red[2].co.local.green = 43690;
-		pmap->red[2].co.local.blue = 43690;
-		pmap->red[3].co.local.red = 65535;
-		pmap->red[3].co.local.green = 65535;
-		pmap->red[3].co.local.blue = 65535;
-
-		result = TRUE;
-		goto rev;
-	}
-	switch (pVisual->class) {
-	case GrayScale:
-	case PseudoColor:
+	switch (screen->fb.depth) {
+	case 1:
+	case 2:
+	case 4:
+	case 8:
 		pdefs = malloc(nent * sizeof(xColorItem));
 		if (!pdefs)
 			return FALSE;
 		for (i = 0; i < nent; i++)
 			pdefs[i].pixel = i;
+		if (gray)
+			wsfbDefaultColormapMono(screen);
+		else
+			wsfbDefaultColormap(screen);
 		wsfbGetColors(pScreen, nent, pdefs);
 		for (i = 0; i < nent; i++) {
 			pmap->red[i].co.local.red = (uint16_t)pdefs[i].red;
@@ -653,9 +631,13 @@ static Bool wsfbCreateColormap(ColormapPtr pmap)
 		break;
 	}
 
-rev:
+	pScreen->blackPixel = 0;
+	pScreen->whitePixel = nent - 1;
+
 	if (result && revcolors) {
 		nent--;
+		pScreen->whitePixel = 0;
+		pScreen->blackPixel = nent;
 		for (i = 0; i <= nent / 2; i++) {
 			uint32_t red, green, blue;
 
@@ -708,19 +690,53 @@ void wsfbPreserve(KdCardInfo * card)
 static void wsfbDefaultColormap(KdScreenInfo *screen)
 {
 	FbdevPriv *priv = screen->card->driver;
-	int i;
+	int i, j, tmp;
+
+
+	if (MACHINE == "mac68k" || MACHINE == "macppc") {
+		if (screen->fb.depth == 8) {
+			j = 0;
+			for (i = 0; i < 256; i++) {
+				priv->red[i] = apple8_cmap[j];
+				priv->green[i] = apple8_cmap[j + 1];
+				priv->blue[i] = apple8_cmap[j + 2];
+				j += 3;
+			}
+		} else {
+			j = 0;
+			for (i = 0; i < 256; i++) {
+				priv->red[i] = apple4_cmap[j];
+				priv->green[i] = apple4_cmap[j + 1];
+				priv->blue[i] = apple4_cmap[j + 2];
+				j += 3;
+			}
+		}
+		i--;
+		wsfbUpdateFbColormap(priv, 0, i);
+	} else {
+		/* Accept the kernel colormap */
+
+		return;
+	}
+}
+
+static void wsfbDefaultColormapMono(KdScreenInfo *screen)
+{
+	FbdevPriv *priv = screen->card->driver;
+	int i, n;
 	int mapcolors = pow(2, priv->info.fbi_bitsperpixel);
 
-	for (i = 0; i < mapcolors; i++) {
-			priv->red[i] =
+	n = 0;
+	for (i = mapcolors - 1; i >= 0; i--) {
+			priv->red[n] =
 			    (i * 255 / (mapcolors - 1));
-			priv->green[i] =
+			priv->green[n] =
 			    (i * 255 / (mapcolors - 1));
-			priv->blue[i] =
+			priv->blue[n] =
 			    (i * 255 / (mapcolors - 1));
+			n++;
 	}
-	i--;
-	wsfbUpdateFbColormap(priv, 0, i);
+	wsfbUpdateFbColormap(priv, 0, mapcolors - 1);
 }
 
 static int wsfbUpdateFbColormap(FbdevPriv *priv, int minidx, int maxidx)
@@ -750,7 +766,10 @@ Bool wsfbEnable(ScreenPtr pScreen)
 	if (ioctl(priv->fd, WSDISPLAYIO_SMODE, &mode) == -1)
 		return FALSE;
 
-	wsfbDefaultColormap(screen);
+	if (gray)
+		wsfbDefaultColormapMono(screen);
+	else
+		wsfbDefaultColormap(screen);
 #if 0
 	if (priv->info.visual == FB_VISUAL_DIRECTCOLOR) {
 		int i;
