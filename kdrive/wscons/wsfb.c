@@ -744,8 +744,21 @@ static int wsfbUpdateFbColormap(FbdevPriv *priv, int minidx, int maxidx)
 	struct wsdisplay_cmap cmap;
 	int result;
 
+	if (!priv->inited) {
+		cmap.index = 0;
+		cmap.count = 256;
+
+		cmap.red=&priv->orig_red[0];
+		cmap.green=&priv->orig_green[0];
+		cmap.blue=&priv->orig_blue[0];
+		ioctl(priv->fd, WSDISPLAYIO_GETCMAP, &cmap);
+
+		priv->inited = TRUE;
+	}
+
 	cmap.index = minidx;
 	cmap.count = maxidx - minidx + 1;
+
 	cmap.red = &priv->red[minidx];
 	cmap.green = &priv->green[minidx];
 	cmap.blue = &priv->blue[minidx];
@@ -835,6 +848,18 @@ void wsfbRestore(KdCardInfo * card)
 void wsfbScreenFini(KdScreenInfo * screen)
 {
 	FbdevPriv *priv = screen->card->driver;
+	struct wsdisplay_cmap cmap;
+
+	if (screen->fb.depth <= 8 && priv->inited) {
+		cmap.index = 0;
+		cmap.count = 256;
+
+		cmap.red=&priv->orig_red[0];
+		cmap.green=&priv->orig_green[0];
+		cmap.blue=&priv->orig_blue[0];
+		ioctl(priv->fd, WSDISPLAYIO_PUTCMAP, &cmap);
+	}
+
 	int wsmode = WSDISPLAYIO_MODE_EMUL;
 
 	(void)ioctl(priv->fd, WSDISPLAYIO_SMODE, &wsmode);

@@ -65,6 +65,10 @@ typedef struct _wsfbPriv {
 	u_char red[256];
 	u_char blue[256];
 	u_char green[256];
+	u_char orig_red[256];
+	u_char orig_blue[256];
+	u_char orig_green[256];
+	Bool inited;
 	int fd;
 	char *fb;
 	char *fb_base;
