@@ -690,10 +690,10 @@ void wsfbPreserve(KdCardInfo * card)
 static void wsfbDefaultColormap(KdScreenInfo *screen)
 {
 	FbdevPriv *priv = screen->card->driver;
-	int i, j, tmp;
+	int i, j;
 
 
-	if (MACHINE == "mac68k" || MACHINE == "macppc") {
+	if (strcmp(MACHINE, "mac68k") == 0 || strcmp(MACHINE, "macppc") == 0) {
 		if (screen->fb.depth == 8) {
 			j = 0;
 			for (i = 0; i < 256; i++) {
