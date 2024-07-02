@@ -631,13 +631,13 @@ static Bool wsfbCreateColormap(ColormapPtr pmap)
 		break;
 	}
 
-	pScreen->blackPixel = 0;
-	pScreen->whitePixel = nent - 1;
+	pScreen->blackPixel = nent - 1;
+	pScreen->whitePixel = 0;
 
 	if (result && revcolors) {
 		nent--;
-		pScreen->whitePixel = 0;
-		pScreen->blackPixel = nent;
+		pScreen->whitePixel = nent;
+		pScreen->blackPixel = 0;
 		for (i = 0; i <= nent / 2; i++) {
 			uint32_t red, green, blue;
 
