@@ -704,7 +704,7 @@ static void wsfbDefaultColormap(KdScreenInfo *screen)
 			}
 		} else {
 			j = 0;
-			for (i = 0; i < 256; i++) {
+			for (i = 0; i < 16; i++) {
 				priv->red[i] = apple4_cmap[j];
 				priv->green[i] = apple4_cmap[j + 1];
 				priv->blue[i] = apple4_cmap[j + 2];
