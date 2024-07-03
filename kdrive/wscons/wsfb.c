@@ -695,9 +695,9 @@ static void wsfbDefaultColormap(KdScreenInfo *screen)
 		if (screen->fb.depth == 8) {
 			j = 0;
 			for (i = 0; i < 256; i++) {
-				priv->red[i] = apple8_cmap[j];
-				priv->green[i] = apple8_cmap[j + 1];
-				priv->blue[i] = apple8_cmap[j + 2];
+				priv->red[i] = 255 - apple8_cmap[j];
+				priv->green[i] = 255 - apple8_cmap[j + 1];
+				priv->blue[i] = 255 - apple8_cmap[j + 2];
 				j += 3;
 			}
 		} else {
