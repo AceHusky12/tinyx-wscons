@@ -244,8 +244,7 @@ CreateColormap(Colormap mid, ScreenPtr pScreen, VisualPtr pVisual,
     Pixel *ppix, **pptr;
 
     class = pVisual->class;
-    if (!(class & DynamicClass) && (alloc != AllocNone) &&
-        (client != SERVER_ID))
+    if ((alloc != AllocNone) && (client != SERVER_ID))
         return (BadMatch);
 
     size = pVisual->ColormapEntries;
@@ -1508,7 +1507,7 @@ AllocColorCells(int client, ColormapPtr pmap, int colors, int planes,
 {
     Pixel rmask, gmask, bmask, *ppixFirst, r, g, b;
 
-    int n, class;
+    int n;
 
     int ok;
 
@@ -1516,9 +1515,6 @@ AllocColorCells(int client, ColormapPtr pmap, int colors, int planes,
 
     colorResource *pcr = (colorResource *) NULL;
 
-    class = pmap->class;
-    if (!(class & DynamicClass))
-        return (BadAlloc);      /* Shouldn't try on this type */
     oldcount = pmap->numPixelsRed[client];
     if (pmap->class == DirectColor)
         oldcount += pmap->numPixelsGreen[client] + pmap->numPixelsBlue[client];
@@ -1590,8 +1586,6 @@ AllocColorPlanes(int client, ColormapPtr pmap, int colors,
     colorResource *pcr = (colorResource *) NULL;
 
     class = pmap->class;
-    if (!(class & DynamicClass))
-        return (BadAlloc);      /* Shouldn't try on this type */
     oldcount = pmap->numPixelsRed[client];
     if (class == DirectColor)
         oldcount += pmap->numPixelsGreen[client] + pmap->numPixelsBlue[client];
@@ -2312,9 +2306,6 @@ StoreColors(ColormapPtr pmap, int count, xColorItem * defs)
     int ok;
 
     class = pmap->class;
-    if (!(class & DynamicClass) && !(pmap->flags & BeingCreated)) {
-        return (BadAccess);
-    }
     pVisual = pmap->pVisual;
 
     idef = 0;
