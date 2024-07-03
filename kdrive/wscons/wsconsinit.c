@@ -82,7 +82,10 @@ void ddxUseMsg(void)
 	    ("-gray            Use grayscale palette. 16/256 colors only.\n");
 	ErrorF
 	    ("-revcolors       Reverse colors.\n");
-	    ("-staticmap       Use static colormap.\n");
+	ErrorF
+	    ("-staticmap [apple]\n");
+	ErrorF
+	    ("                 Use static colormap. [Install apple default]\n");
 	ErrorF("\n");
 }
 
@@ -108,6 +111,16 @@ int ddxProcessArgument(int argc, char **argv, int i)
 		revcolors = TRUE;
 		return 1;
 	} else if (!strcmp(argv[i], "-staticmap")) {
+		if (i + 1 < argc) {
+		  	if (!strcmp(argv[i + 1], "apple")) {
+				apple = TRUE;
+				staticmap = TRUE;
+				return 2;
+			} else if (*argv[i + 1] != '-') {
+				UseMsg();
+				exit(1);
+			}
+		}
 		staticmap = TRUE;
 		return 1;
 	}

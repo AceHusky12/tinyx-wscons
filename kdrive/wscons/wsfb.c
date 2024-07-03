@@ -48,8 +48,6 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <sys/param.h>
-
 #ifdef HAVE_CONFIG_H
 #include <kdrive-config.h>
 #endif
@@ -693,7 +691,7 @@ static void wsfbDefaultColormap(KdScreenInfo *screen)
 	int i, j;
 
 
-	if (strcmp(MACHINE, "mac68k") == 0 || strcmp(MACHINE, "macppc") == 0) {
+	if (apple) {
 		if (screen->fb.depth == 8) {
 			j = 0;
 			for (i = 0; i < 256; i++) {
