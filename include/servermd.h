@@ -326,7 +326,7 @@ SOFTWARE.
 
 
 /* linux on the Compaq Itsy */
-#if defined(linux) && defined(__arm__)
+#if defined(__arm__)
 #define IMAGE_BYTE_ORDER	LSBFirst
 #define BITMAP_BIT_ORDER	LSBFirst
 #define GLYPHPADBYTES		4
