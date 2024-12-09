@@ -71,7 +71,7 @@ const KdCardFuncs wsfbFuncs = {
 	wsfbCreateResources,	/* createRes */
 	wsfbPreserve,		/* preserve */
 	NULL,		/* enable */
-	/* wsfbDPMS */ NULL,	/* dpms */
+	wsfbDPMS,	/* dpms */
 	wsfbDisable,		/* disable */
 	wsfbRestore,		/* restore */
 	wsfbScreenFini,	/* scrfini */
@@ -805,26 +805,18 @@ Bool wsfbEnable(ScreenPtr pScreen)
 
 Bool wsfbDPMS(ScreenPtr pScreen, int mode)
 {
-#if notyet
 	KdScreenPriv(pScreen);
 	FbdevPriv *priv = pScreenPriv->card->driver;
 	static int oldmode = -1;
+	int value;
 
 	if (mode == oldmode)
 		return TRUE;
-#ifdef FBIOPUT_POWERMODE
-	if (ioctl(priv->fd, FBIOPUT_POWERMODE, &mode) >= 0) {
+	value = mode ? WSDISPLAYIO_VIDEO_ON : WSDISPLAYIO_VIDEO_OFF;
+	if (ioctl(priv->fd, WSDISPLAYIO_SVIDEO, &value) != -1) {
 		oldmode = mode;
 		return TRUE;
 	}
-#endif
-#ifdef FBIOBLANK
-	if (ioctl(priv->fd, FBIOBLANK, mode ? mode + 1 : 0) >= 0) {
-		oldmode = mode;
-		return TRUE;
-	}
-#endif
-#endif
 	return FALSE;
 
 }
