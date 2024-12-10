@@ -65,6 +65,9 @@ static int kdMouseButtonCount;
 int kdMinScanCode;
 int kdMaxScanCode;
 
+unsigned char last_scancode = -1, last_up = -1;
+CARD32 last_time = 0;
+
 static int kdMinKeyCode;
 static int kdMaxKeyCode;
 
@@ -1262,6 +1265,11 @@ void KdEnqueueKeyboardEvent(unsigned char scan_code, unsigned char is_up)
 		scan_code = remap(scan_code);
 
 	if (kdMinScanCode <= scan_code && scan_code <= kdMaxScanCode) {
+		if (scan_code != last_scancode || last_up != is_up)
+			last_time = GetTimeInMillis();
+		last_scancode = scan_code;
+		last_up = is_up;
+
 		key_code = scan_code + KD_MIN_KEYCODE - kdMinScanCode;
 
 		/*
@@ -1482,10 +1490,17 @@ KdBlockHandler(int screen, pointer blockData, pointer timeout, pointer readmask)
 		AdjustWaitForDelay(timeout, myTimeout);
 }
 
+static CARD32
+AutorepeatTimeoutExpire(OsTimerPtr timer,CARD32 now,pointer arg)
+{
+	return 50;
+}
+
 void
 KdWakeupHandler(int screen,
 		pointer data, unsigned long lresult, pointer readmask)
 {
+	static OsTimerPtr AutorepeatTimer = NULL;
 	int result = (int)lresult;
 
 	fd_set *pReadmask = (fd_set *) readmask;
@@ -1495,14 +1510,31 @@ KdWakeupHandler(int screen,
 	KdMouseInfo *mi;
 
 	if (kdInputEnabled && result > 0) {
-		for (i = 0; i < kdNumInputFds; i++)
+		for (i = 0; i < kdNumInputFds; i++) {
 			if (FD_ISSET(kdInputFds[i].fd, pReadmask)) {
 				KdBlockSigio();
 				(*kdInputFds[i].read) (kdInputFds[i].fd,
 						       kdInputFds[i].closure);
 				KdUnblockSigio();
 			}
+		}
+		if (!last_up) {
+			AutorepeatTimer = TimerSet(AutorepeatTimer, 0, 500,
+	                    AutorepeatTimeoutExpire, NULL);
+		} else if (AutorepeatTimer) {
+			TimerFree(AutorepeatTimer);
+			AutorepeatTimer = NULL;
+		}
 	}
+	if (kdInputEnabled && !last_up && last_time &&
+	    (GetTimeInMillis() - last_time) >= 250) {
+		KdEnqueueKeyboardEvent(last_scancode, last_up);
+		if (AutorepeatTimer) {
+			TimerFree(AutorepeatTimer);
+			AutorepeatTimer = NULL;
+		}
+	}
+
 	for (mi = kdMouseInfo; mi; mi = mi->next) {
 		if (mi->timeoutPending) {
 			if ((long)(GetTimeInMillis() - mi->emulationTimeout) >=
