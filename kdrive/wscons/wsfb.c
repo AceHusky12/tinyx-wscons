@@ -812,7 +812,7 @@ Bool wsfbDPMS(ScreenPtr pScreen, int mode)
 
 	if (mode == oldmode)
 		return TRUE;
-	value = mode ? WSDISPLAYIO_VIDEO_ON : WSDISPLAYIO_VIDEO_OFF;
+	value = mode ? WSDISPLAYIO_VIDEO_OFF : WSDISPLAYIO_VIDEO_ON;
 	if (ioctl(priv->fd, WSDISPLAYIO_SVIDEO, &value) != -1) {
 		oldmode = mode;
 		return TRUE;
