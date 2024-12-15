@@ -49,7 +49,7 @@ static void readKernelMapping(void);
 
 static void wsKeyboardLoad(void)
 {
-	if ((wsConsoleFd = open("/dev/wskbd", O_RDONLY | O_NONBLOCK | O_EXCL))
+	if ((wsConsoleFd = open("/dev/wskbd", O_RDWR | O_NONBLOCK | O_EXCL))
 								< 0) {
 		fprintf(stderr, "Error opening keyboard %s: %s\n",
 		       "/dev/wskbd", strerror(errno));
