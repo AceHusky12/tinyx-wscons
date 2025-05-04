@@ -121,7 +121,7 @@ SOFTWARE.
  */
 
 
-#ifdef __arm32__
+#if defined(__arm32__) || defined(__aarch64__)
 
 #define IMAGE_BYTE_ORDER        LSBFirst
 
