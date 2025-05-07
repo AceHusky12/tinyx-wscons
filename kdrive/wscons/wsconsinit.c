@@ -53,6 +53,9 @@
 #endif
 #include "wsdev.h"
 
+#include <sys/resource.h>
+int8_t priority;
+
 extern const KdCardFuncs wsfbFuncs;
 extern const KdKeyboardFuncs wsKeyboardFuncs;
 extern const KdMouseFuncs wsMouseFuncs;
@@ -78,6 +81,8 @@ void ddxUseMsg(void)
 	ErrorF("\nXwscons Device Usage:\n");
 	ErrorF
 	    ("-fb path         wscons device to use. Defaults to /dev/tty.\n");
+	ErrorF
+	    ("-n #             Xwscons scheduling priority \n");
 	ErrorF
 	    ("-gray            Use grayscale palette. 16/256 colors only.\n");
 	ErrorF
@@ -110,6 +115,19 @@ int ddxProcessArgument(int argc, char **argv, int i)
 	} else if (!strcmp(argv[i], "-revcolors")) {
 		revcolors = TRUE;
 		return 1;
+	} else if (!strcmp(argv[i], "-n")) {
+		if (i + 1 < argc) {
+			priority = atoi(argv[i + 1]);
+			if (priority > 20)
+				priority = 20;
+			if (priority < -19)
+				priority = -19;
+			setpriority(PRIO_PROCESS, 0, priority);
+
+			return 2;
+		}
+		UseMsg();
+		exit(1);
 	} else if (!strcmp(argv[i], "-staticmap")) {
 		if (i + 1 < argc) {
 		  	if (!strcmp(argv[i + 1], "apple")) {
