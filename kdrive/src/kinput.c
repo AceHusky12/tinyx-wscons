@@ -66,7 +66,7 @@ int kdMinScanCode;
 int kdMaxScanCode;
 
 unsigned char last_scancode = -1, last_up = -1;
-CARD32 last_time = 0;
+CARD32 last_time = 0, repeat_time = 0, keyboard_rate = 20;
 
 static int kdMinKeyCode;
 static int kdMaxKeyCode;
@@ -1265,8 +1265,10 @@ void KdEnqueueKeyboardEvent(unsigned char scan_code, unsigned char is_up)
 		scan_code = remap(scan_code);
 
 	if (kdMinScanCode <= scan_code && scan_code <= kdMaxScanCode) {
-		if (scan_code != last_scancode || last_up != is_up)
+		if (scan_code != last_scancode || last_up != is_up) {
 			last_time = GetTimeInMillis();
+			repeat_time = 0;
+		}
 		last_scancode = scan_code;
 		last_up = is_up;
 
@@ -1527,7 +1529,9 @@ KdWakeupHandler(int screen,
 		}
 	}
 	if (kdInputEnabled && !last_up && last_time &&
-	    (GetTimeInMillis() - last_time) >= 250) {
+	    (GetTimeInMillis() - last_time) >= 250 &&
+	    (GetTimeInMillis() - repeat_time) >= 1000 / keyboard_rate) {
+		repeat_time = GetTimeInMillis();
 		KdEnqueueKeyboardEvent(last_scancode, last_up);
 		if (AutorepeatTimer) {
 			TimerFree(AutorepeatTimer);

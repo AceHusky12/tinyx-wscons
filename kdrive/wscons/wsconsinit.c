@@ -60,6 +60,8 @@ extern const KdCardFuncs wsfbFuncs;
 extern const KdKeyboardFuncs wsKeyboardFuncs;
 extern const KdMouseFuncs wsMouseFuncs;
 
+extern CARD32	keyboard_rate;
+
 void InitCard(char *name)
 {
 	KdCardInfoAdd(&wsfbFuncs, 0);
@@ -83,6 +85,8 @@ void ddxUseMsg(void)
 	    ("-fb path         wscons device to use. Defaults to /dev/tty.\n");
 	ErrorF
 	    ("-n #             Xwscons scheduling priority \n");
+	ErrorF
+	    ("-keyrate #       Sets autorepeat keys per second\n");
 	ErrorF
 	    ("-gray            Use grayscale palette. 16/256 colors only.\n");
 	ErrorF
@@ -123,6 +127,20 @@ int ddxProcessArgument(int argc, char **argv, int i)
 			if (priority < -19)
 				priority = -19;
 			setpriority(PRIO_PROCESS, 0, priority);
+
+			return 2;
+		}
+		UseMsg();
+		exit(1);
+	} else if (!strcmp(argv[i], "-keyrate")) {
+		if (i + 1 < argc) {
+			if (*argv[i + 1] == '-') {
+				UseMsg();
+				exit(1);
+			}
+		  	keyboard_rate = atoi(argv[i + 1]);
+			if (keyboard_rate <= 0)
+				keyboard_rate = 20;
 
 			return 2;
 		}
