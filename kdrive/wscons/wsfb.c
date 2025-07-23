@@ -722,7 +722,7 @@ static void wsfbDefaultColormapMono(KdScreenInfo *screen)
 {
 	FbdevPriv *priv = screen->card->driver;
 	int i, n;
-	int mapcolors = pow(2, priv->info.fbi_bitsperpixel);
+	int mapcolors = (1 << screen->fb.depth);
 
 	n = 0;
 	for (i = mapcolors - 1; i >= 0; i--) {
