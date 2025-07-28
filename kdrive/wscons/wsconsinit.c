@@ -52,13 +52,21 @@
 #include <kdrive-config.h>
 #endif
 #include "wsdev.h"
+#include <X11/keysym.h>
 
+#include <sys/ioctl.h>
 #include <sys/resource.h>
+#include <dev/wscons/wsconsio.h>
+#include <dev/wscons/wsdisplay_usl_io.h>
+#include <errno.h>
+#include <signal.h>
 int8_t priority;
 
 extern const KdCardFuncs wsfbFuncs;
 extern const KdKeyboardFuncs wsKeyboardFuncs;
 extern const KdMouseFuncs wsMouseFuncs;
+
+#define DEFDEV "/dev/ttyEcfg"
 
 extern CARD32	keyboard_rate;
 
@@ -164,11 +172,110 @@ int ddxProcessArgument(int argc, char **argv, int i)
 	return KdProcessArgument(argc, argv, i);
 }
 
+static int activeVT=-1;
+
+static void wsVTRequest(int sig)
+{
+	kdSwitchPending = TRUE;
+}
+
+static void WsDisable(void)
+{
+	int wsfd;
+	int mode;
+
+	if ((wsfd = open(wsfbDevicePath, O_RDWR)) == -1)
+		return;
+	if (kdSwitchPending) {
+		kdSwitchPending = FALSE;
+		ioctl(wsfd, VT_RELDISP, 1);
+	}
+
+	mode = WSDISPLAYIO_MODE_EMUL;
+	ioctl(wsfd, WSDISPLAYIO_SMODE, &mode);
+
+	close(wsfd);
+
+	return;
+}
+
+static void WsEnable(void)
+{
+	struct vt_stat vts;
+	struct sigaction act;
+	struct vt_mode VT;
+	int wsfd;
+	int mode;
+
+	if ((wsfd = open(wsfbDevicePath, O_RDWR)) == -1)
+		return;
+
+	if (kdSwitchPending) {
+		kdSwitchPending = FALSE;
+		if (ioctl(wsfd, VT_RELDISP, VT_ACKACQ) < 0) {
+			fprintf(stderr, "Enable RELDISP\n");
+			close(wsfd);
+
+			return;
+		}
+	}
+
+	if (activeVT == -1) {
+		act.sa_handler = wsVTRequest;
+		sigemptyset(&act.sa_mask);
+		act.sa_flags = 0;
+		sigaction(SIGUSR1, &act, 0);
+
+		VT.mode = VT_PROCESS;
+		VT.relsig = SIGUSR1;
+		VT.acqsig = SIGUSR1;
+
+		if (ioctl(wsfd, VT_SETMODE, &VT) < 0)
+			fprintf(stderr, "wsfbEnable: VT_SETMODE failed\n");
+	}
+	if (ioctl(wsfd, VT_GETSTATE, &vts) == 0) {
+		activeVT = vts.v_active;
+	}
+
+	mode = WSDISPLAYIO_MODE_DUMBFB;
+	ioctl(wsfd, WSDISPLAYIO_SMODE, &mode);
+	close(wsfd);
+
+	return;
+}
+
+static Bool WsSpecialKey(KeySym sym)
+{
+	uint8_t idx;
+	int wsfdcon;
+
+	if (sym >= XK_F1 && sym <= XK_F12) {
+		idx = sym - XK_F1;
+		idx++;
+
+		if (idx == activeVT)
+			return TRUE;
+
+		kdSwitchPending = TRUE;
+
+		if ((wsfdcon = open(DEFDEV, O_RDWR)) == -1)
+			return TRUE;
+
+		if (ioctl(wsfdcon, VT_ACTIVATE, idx) == -1)
+			fprintf(stderr, "Cannot switch to %d", idx);
+
+		close(wsfdcon);
+
+		return TRUE;
+	}
+	return FALSE;
+}
+
 static const KdOsFuncs BSDFuncs = {
 	NULL,
-	NULL,
-	NULL,
-	NULL,
+	WsEnable,
+	WsSpecialKey,
+	WsDisable,
 	NULL,
 	0
 };

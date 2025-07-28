@@ -49,7 +49,7 @@ static void readKernelMapping(void);
 
 static void wsKeyboardLoad(void)
 {
-	if ((wsConsoleFd = open("/dev/wskbd", O_RDWR | O_NONBLOCK | O_EXCL))
+	if ((wsConsoleFd = open("/dev/wskbd", O_RDWR | O_NONBLOCK))
 								< 0) {
 		fprintf(stderr, "Error opening keyboard %s: %s\n",
 		       "/dev/wskbd", strerror(errno));
@@ -118,12 +118,24 @@ static void wsKeyboardRead(int fd, void *closure)
 	}
 }
 
+static int wasDisabled = 0;
 static int wsKeyboardEnable(int fd, void *closure)
 {
 	struct termios nTty;
 	unsigned char buf[256];
 	int option, n;
 
+	if (wasDisabled == 1 &&
+	    (wsConsoleFd = open("/dev/wskbd", O_RDWR | O_NONBLOCK))
+								< 0) {
+		fprintf(stderr, "Error opening keyboard %s: %s\n",
+		       "/dev/wskbd", strerror(errno));
+		wsConsoleFd = -1;
+
+		return FALSE;
+	}
+	wasDisabled = 0;
+	fd = wsConsoleFd;
 	tcgetattr(fd, &wsTermios);
 
 
@@ -155,6 +167,7 @@ static int wsKeyboardEnable(int fd, void *closure)
 	 * Flush any pending keystrokes
 	 */
 	while ((n = read(fd, buf, sizeof(buf))) > 0) ;
+
 	return fd;
 }
 
@@ -283,6 +296,10 @@ static void wsKeyboardDisable(int fd, void *closure)
 	ioctl(fd, WSKBDIO_SETMODE, &option);
 
 	tcsetattr(fd, TCSANOW, &wsTermios);
+
+	close(fd);
+
+	wasDisabled = 1;
 }
 
 static int wsKeyboardInit(void)
